@@ -19,32 +19,20 @@ ml_models = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Load the model once when the server starts
     logger.info("Starting up server and loading XGBoost model...")
     try:
         with open("xg_model.pkl", "rb") as f:
             ml_models["xg_model"] = pickle.load(f)
         logger.info("Model loaded successfully.")
-    except FileNotFoundError:
-        logger.error("xg_model.pkl not found! Please ensure it is in the root directory.")
     except Exception as e:
         logger.error(f"Error loading model: {str(e)}")
     
-    yield # Server is running
-    
-    # Shutdown: Clean up resources
-    logger.info("Shutting down server...")
+    yield 
     ml_models.clear()
 
 # --- 3. APP INITIALIZATION ---
-app = FastAPI(
-    title="Advanced XGBoost Predictor",
-    description="Production-ready API for ML predictions",
-    version="1.0.0",
-    lifespan=lifespan
-)
+app = FastAPI(title="Premium AI Predictor", lifespan=lifespan)
 
-# Add CORS middleware for security and future frontend separation
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,91 +43,118 @@ app.add_middleware(
 
 # --- 4. PYDANTIC DATA VALIDATION ---
 class PredictionRequest(BaseModel):
-    Age: int = Field(..., gt=0, lt=120, description="Age in years")
-    Sex: int = Field(..., ge=0, le=1, description="0 = Female, 1 = Male")
-    BMI: float = Field(..., gt=10.0, lt=60.0, description="Body Mass Index")
-    Children: int = Field(..., ge=0, le=15, description="Number of children/dependents")
-    Smoker: int = Field(..., ge=0, le=1, description="0 = Non-smoker, 1 = Smoker")
-    Region: int = Field(..., ge=0, le=3, description="Region code (0 to 3)")
+    Age: int = Field(..., gt=0, lt=120)
+    Sex: int = Field(..., ge=0, le=1)
+    BMI: float = Field(..., gt=10.0, lt=60.0)
+    Children: int = Field(..., ge=0, le=15)
+    Smoker: int = Field(..., ge=0, le=1)
+    Region: int = Field(..., ge=0, le=3)
 
-# --- 5. EMBEDDED ADVANCED UI ---
+# --- 5. PREMIUM UI TEMPLATE ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise AI Predictor</title>
+    <title>AI Medical Cost Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #4A90E2;
-            --bg-gradient: linear-gradient(135deg, #1A1A2E, #16213E, #0F3460);
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-color: #E0E0E0;
-        }
+        * { box-sizing: border-box; }
         body {
-            margin: 0; padding: 20px; font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg-gradient); color: var(--text-color);
-            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            margin: 0; padding: 20px; font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ffffff; min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
         }
         .glass-card {
-            background: var(--glass-bg); backdrop-filter: blur(20px);
-            border-radius: 16px; border: 1px solid var(--glass-border);
-            padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            width: 100%; max-width: 600px;
-            animation: fadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 40px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.5);
+            width: 100%; max-width: 650px;
+            animation: slideIn 0.8s ease-out forwards;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        h1 { margin-top: 0; font-size: 1.8rem; text-align: center; color: #fff; letter-spacing: -0.5px; }
-        p.subtitle { text-align: center; color: #A0A0B0; margin-bottom: 30px; font-size: 0.9rem; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 { margin: 0 0 5px 0; font-size: 2.2rem; text-align: center; font-weight: 800; background: -webkit-linear-gradient(#00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p.subtitle { text-align: center; color: #b0c4de; margin-bottom: 35px; font-weight: 300; }
         
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 550px) { .form-grid { grid-template-columns: 1fr; } }
         
         .input-group { display: flex; flex-direction: column; }
-        label { font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; color: #B0C4DE; }
-        input {
-            background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);
-            color: #fff; padding: 12px 16px; border-radius: 8px; font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); }
+        label { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: #00d2ff; letter-spacing: 0.5px; }
         
-        button {
-            grid-column: 1 / -1; background: var(--primary); color: white;
-            border: none; padding: 14px; border-radius: 8px; font-size: 1.1rem;
-            font-weight: 600; cursor: pointer; transition: transform 0.2s, background 0.2s;
-            margin-top: 10px; position: relative; overflow: hidden;
+        input, select {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 210, 255, 0.3);
+            color: #fff; padding: 14px 18px; border-radius: 10px; font-size: 1rem;
+            font-family: 'Poppins', sans-serif; transition: all 0.3s ease;
+            appearance: none; /* Removes default OS styling for dropdowns */
         }
-        button:hover { background: #357ABD; transform: translateY(-2px); }
-        button:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        input:focus, select:focus {
+            outline: none; border-color: #00d2ff;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        select option { background: #203a43; color: white; } /* Dropdown list color */
+
+        button {
+            grid-column: 1 / -1; background: linear-gradient(to right, #00d2ff, #3a7bd5);
+            color: white; border: none; padding: 16px; border-radius: 10px;
+            font-size: 1.2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 15px; position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        button:hover {
+            transform: scale(1.02); box-shadow: 0 10px 20px rgba(0, 210, 255, 0.4);
+        }
         
         .loader {
             display: none; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white;
-            border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;
-            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;
         }
-        @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-        
-        .btn-text { transition: opacity 0.2s; }
-        .loading .btn-text { opacity: 0; }
-        .loading .loader { display: block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        #result-box {
-            margin-top: 25px; padding: 20px; border-radius: 8px; background: rgba(74, 144, 226, 0.1);
-            border: 1px solid rgba(74, 144, 226, 0.3); text-align: center; display: none;
-            animation: fadeIn 0.4s ease;
+        /* BIG CENTERED ANIMATED RESULT BOX */
+        .result-container {
+            grid-column: 1 / -1;
+            margin-top: 30px;
+            display: none; /* Hidden by default */
+            justify-content: center;
         }
-        .result-label { font-size: 0.9rem; color: #A0A0B0; text-transform: uppercase; letter-spacing: 1px; }
-        .result-value { font-size: 2.5rem; font-weight: 700; color: #fff; margin-top: 5px; }
-        .error { color: #FF6B6B; font-size: 0.9rem; text-align: center; margin-top: 15px; }
+        .result-box {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid #00ff88;
+            border-radius: 15px;
+            padding: 30px 40px;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+            animation: popUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0; transform: scale(0.5);
+        }
+        @keyframes popUp {
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .result-label { font-size: 1.1rem; color: #a0f0c0; text-transform: uppercase; font-weight: 600; letter-spacing: 2px; }
+        .result-value { 
+            font-size: 3.5rem; /* BADA FONT SIZE */
+            font-weight: 800; color: #00ff88; 
+            margin-top: 10px; text-shadow: 0 0 15px rgba(0,255,136,0.6);
+        }
+        .error { color: #ff4b4b; font-size: 1rem; text-align: center; grid-column: 1 / -1; margin-top: 10px; font-weight: 600;}
     </style>
 </head>
 <body>
     <div class="glass-card">
-        <h1>Health Cost Intelligence</h1>
-        <p class="subtitle">Enter patient metrics to generate an AI-driven estimate.</p>
+        <h1>AI Health Cost Predictor</h1>
+        <p class="subtitle">Enter your details to generate a precise cost estimation.</p>
         
         <form id="aiForm">
             <div class="form-grid">
@@ -147,56 +162,86 @@ HTML_TEMPLATE = """
                     <label>Age</label>
                     <input type="number" id="Age" required min="1" max="120" placeholder="e.g., 35">
                 </div>
+                
                 <div class="input-group">
-                    <label>Sex (0:F, 1:M)</label>
-                    <input type="number" id="Sex" required min="0" max="1" placeholder="0 or 1">
+                    <label>Gender</label>
+                    <!-- DROPDOWN ADDED HERE -->
+                    <select id="Sex" required>
+                        <option value="" disabled selected>Select Gender</option>
+                        <option value="0">Female</option>
+                        <option value="1">Male</option>
+                    </select>
                 </div>
+                
                 <div class="input-group">
-                    <label>BMI</label>
+                    <label>BMI (Body Mass Index)</label>
                     <input type="number" id="BMI" step="0.1" required min="10" max="60" placeholder="e.g., 25.5">
                 </div>
+                
                 <div class="input-group">
-                    <label>Children</label>
+                    <label>Number of Children</label>
                     <input type="number" id="Children" required min="0" max="15" placeholder="e.g., 2">
                 </div>
+                
                 <div class="input-group">
-                    <label>Smoker (0:N, 1:Y)</label>
-                    <input type="number" id="Smoker" required min="0" max="1" placeholder="0 or 1">
+                    <label>Smoker?</label>
+                    <!-- DROPDOWN ADDED HERE -->
+                    <select id="Smoker" required>
+                        <option value="" disabled selected>Select option</option>
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
                 </div>
+                
                 <div class="input-group">
-                    <label>Region Code</label>
-                    <input type="number" id="Region" required min="0" max="3" placeholder="0 - 3">
+                    <label>Region</label>
+                    <!-- DROPDOWN ADDED HERE -->
+                    <select id="Region" required>
+                        <option value="" disabled selected>Select your region</option>
+                        <option value="0">Northeast</option>
+                        <option value="1">Northwest</option>
+                        <option value="2">Southeast</option>
+                        <option value="3">Southwest</option>
+                    </select>
                 </div>
+                
+                <div id="error-msg" class="error"></div>
+                
                 <button type="submit" id="submitBtn">
-                    <span class="btn-text">Generate Prediction</span>
-                    <div class="loader"></div>
+                    <span id="btn-text">Calculate Premium</span>
+                    <div class="loader" id="btn-loader"></div>
                 </button>
+                
+                <!-- BADA ANIMATED RESULT BOX -->
+                <div class="result-container" id="result-container">
+                    <div class="result-box">
+                        <div class="result-label">Estimated Insurance Cost</div>
+                        <div class="result-value" id="prediction-value">$0.00</div>
+                    </div>
+                </div>
+
             </div>
         </form>
-        
-        <div id="error-msg" class="error"></div>
-        <div id="result-box">
-            <div class="result-label">Estimated Cost</div>
-            <div class="result-value" id="prediction-value">$0.00</div>
-        </div>
     </div>
 
     <script>
         document.getElementById('aiForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const btnText = document.getElementById('btn-text');
+            const btnLoader = document.getElementById('btn-loader');
             const btn = document.getElementById('submitBtn');
             const errorMsg = document.getElementById('error-msg');
-            const resultBox = document.getElementById('result-box');
+            const resultContainer = document.getElementById('result-container');
             const valueSpan = document.getElementById('prediction-value');
             
-            // Reset UI
+            // UI Reset for processing
             errorMsg.textContent = '';
-            resultBox.style.display = 'none';
-            btn.classList.add('loading');
+            resultContainer.style.display = 'none'; // Hide result box temporarily
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'block';
             btn.disabled = true;
             
-            // Build JSON Payload
             const payload = {
                 Age: parseInt(document.getElementById('Age').value),
                 Sex: parseInt(document.getElementById('Sex').value),
@@ -219,19 +264,21 @@ HTML_TEMPLATE = """
                     throw new Error(data.detail ? JSON.stringify(data.detail) : 'Server error');
                 }
                 
-                // Format as currency and animate in
+                // Format output
                 const formattedValue = new Intl.NumberFormat('en-US', { 
                     style: 'currency', currency: 'USD' 
                 }).format(data.prediction);
                 
+                // Set value and Show animated box
                 valueSpan.textContent = formattedValue;
-                resultBox.style.display = 'block';
+                resultContainer.style.display = 'flex'; // Triggers CSS PopUp Animation
                 
             } catch (err) {
-                errorMsg.textContent = "Validation Error: Please check your inputs.";
+                errorMsg.textContent = "Error: Something went wrong. Make sure all fields are filled.";
                 console.error(err);
             } finally {
-                btn.classList.remove('loading');
+                btnText.style.display = 'block';
+                btnLoader.style.display = 'none';
                 btn.disabled = false;
             }
         });
@@ -243,32 +290,21 @@ HTML_TEMPLATE = """
 # --- 6. API ROUTES ---
 @app.get("/", tags=["UI"])
 async def serve_ui():
-    """Serves the frontend application."""
     return HTMLResponse(content=HTML_TEMPLATE)
 
 @app.post("/api/v1/predict", tags=["Machine Learning"])
 async def generate_prediction(request: PredictionRequest):
-    """
-    Accepts patient metrics via JSON and returns the XGBoost prediction.
-    """
     if "xg_model" not in ml_models:
-        raise HTTPException(status_code=503, detail="Model is currently unavailable. Please try again later.")
+        raise HTTPException(status_code=503, detail="Model unavailable.")
     
     try:
-        # Convert validated Pydantic model directly to pandas DataFrame
         input_df = pd.DataFrame([request.model_dump()])
-        
-        # Log the incoming request for monitoring
-        logger.info(f"Processing prediction for Age: {request.Age}, BMI: {request.BMI}")
-        
-        # Predict
         prediction = ml_models["xg_model"].predict(input_df)[0]
         
         return {
             "status": "success",
             "prediction": round(float(prediction), 2)
         }
-        
     except Exception as e:
         logger.error(f"Prediction failed: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error during inference.")
+        raise HTTPException(status_code=500, detail="Internal server error.")
